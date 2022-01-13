@@ -123,6 +123,7 @@ class Prober(object):
         for i, x, y in train_dataloader:
             x = x.to(self.args.device)
             y = y.to(self.args.device)
+            y = y.to(torch.int64)
             self.optimizer.zero_grad()
             prediction = self.clf(x)
             # loss
@@ -138,7 +139,7 @@ class Prober(object):
     def compute_weights(self, dataset: FeatureDataset):
         target_labels = [item[-1].item() for item in dataset.features]
         unique_labels = np.unique(target_labels)
-        label_weights = compute_class_weight("balanced", unique_labels, target_labels)
+        label_weights = compute_class_weight(class_weight="balanced", classes=unique_labels, y=target_labels)
         label_weights = dict(zip(unique_labels, label_weights))
         return label_weights
 
@@ -151,11 +152,12 @@ class Prober(object):
         te_losses = []
         te_scores = []
         self.clf.eval()
-        weighted_accuracy_score = lambda x, y: accuracy_score(y, x, label_weight)
+        weighted_accuracy_score = lambda x, y: accuracy_score(y, x, sample_weight=label_weight)
         with torch.no_grad():
             for i, x, y in eval_dataloader:
                 x = x.to(self.args.device)
                 y = y.to(self.args.device)
+                y = y.to(torch.int64)
                 clf_output = self.clf(x)
                 loss = self.criterion(clf_output, y)
                 te_losses.append(loss.item())
