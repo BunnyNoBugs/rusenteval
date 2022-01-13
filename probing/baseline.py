@@ -7,6 +7,7 @@ import gc
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
+from typing import Optional
 
 import torch
 from fasttext import load_model, util
@@ -62,16 +63,17 @@ class FastTextVectorizer(object):
 class BaselineFeaturizer(object):
     def __init__(
         self,
-        fasttext_model_name: str,
+        fasttext_model_name: Optional[str],
         bert_model_name: str,
         xlmr_model_name: str,
     ):
         self.fasttext_model_name = fasttext_model_name
         self.bert_model_name = bert_model_name
         self.xlmr_model_name = xlmr_model_name
-        self.fasttext_vectorizer = FastTextVectorizer(
-            fasttext_model_name=self.fasttext_model_name
-        )
+        if self.fasttext_model_name:
+            self.fasttext_vectorizer = FastTextVectorizer(
+                fasttext_model_name=self.fasttext_model_name
+            )
         self.bert_tokenizer = BertTokenizer.from_pretrained(
             self.bert_model_name, do_lower_case=False
         )
@@ -142,7 +144,7 @@ class Baseline(object):
             "tfidf_bpe_tokens",
             "tfidf_sentencepiece_tokens",
         ],
-        fasttext_model_name: str = "ft_native_300_ru_wiki_lenta_nltk_word_tokenize.bin",
+        fasttext_model_name: Optional[str] = "ft_native_300_ru_wiki_lenta_nltk_word_tokenize.bin",
         bert_model_name: str = "bert-base-multilingual-cased",
         xlmr_model_name: str = "xlm-roberta-base",
         result_dir: str = "baseline_results",
