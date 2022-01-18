@@ -1,0 +1,7 @@
+#python
+*.pyc
+
+/models
+/features
+/baseline_results
+/bootstrap
