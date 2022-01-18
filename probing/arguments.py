@@ -1,4 +1,5 @@
 from dataclasses import field, dataclass
+from typing import Union, Optional
 
 
 @dataclass
@@ -55,4 +56,12 @@ class ProbingArguments(object):
         metadata={
             "help": "whether to compute the weighted accuracy score if imbalanced"
         },
+    )
+    fraction: Optional[Union[float, int]] = field(
+        default=None,
+        metadata={"help": "The size of fraction of the original dataset"}
+    )
+    exper_n: Optional[int] = field(
+        default=None,
+        metadata={"help": "The number of the experiment in a series"}
     )

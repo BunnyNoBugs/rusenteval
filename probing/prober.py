@@ -181,6 +181,8 @@ class Prober(object):
                 te_scores,
                 self.model_name,
                 "_".join([self.args.clf, "layer", str(self.layer_num)]),
+                self.args.fraction,
+                self.args.exper_n
             )
         gc.collect()
         return te_score, epoch_te_loss

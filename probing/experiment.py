@@ -54,5 +54,7 @@ class Experiment(object):
                 probe_task_results,
                 self.model_name,
                 self.args.clf,
+                self.args.fraction,
+                self.args.exper_n,
                 self.result_dir,
             )

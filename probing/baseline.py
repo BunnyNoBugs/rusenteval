@@ -277,7 +277,9 @@ class Baseline(object):
                     baseline_task_results,
                     feature_name,
                     self.args.clf,
-                    self.result_dir,
+                    self.args.fraction,
+                    self.args.exper_n,
+                    self.result_dir
                 )
                 
                 del features, _label_encoder, baseline_prober

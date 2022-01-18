@@ -9,7 +9,7 @@ import torch
 import random
 import numpy as np
 
-from typing import Union
+from typing import Union, Optional
 from tqdm.auto import tqdm
 from functools import wraps
 
@@ -44,7 +44,9 @@ def save_results(
     obj: Union[list, dict],
     model_name: str,
     clf_name: str,
-    save_dir: str = "bootstrap",
+    fraction: Optional[Union[float, int]],
+    exper_n: Optional[int],
+    save_dir: str = "bootstrap"
 ):
     """
     A function that saves scores or results for a given layer of the transformer model on a probe task
@@ -53,12 +55,20 @@ def save_results(
     :param model_name: The transformer model name
     :param clf_name: The classifier name (logreg or mlp) if given
     :param save_dir: The directory name to store layer features or scores
+    :param fraction: The size of fraction of the original dataset
+    :param exper_n: The number of the experiment in a series
     """
-    result_dir_path = os.path.join(os.getcwd(), save_dir, model_name)
+    if fraction:
+        result_dir_path = os.path.join(os.getcwd(), save_dir, model_name, str(fraction))
+    else:
+        result_dir_path = os.path.join(os.getcwd(), save_dir, model_name)
     if not os.path.exists(result_dir_path):
         os.makedirs(result_dir_path)
 
-    result_fname_path = os.path.join(result_dir_path, f"{probe_task}_{clf_name}.json")
+    if exper_n:
+        result_fname_path = os.path.join(result_dir_path, f"{probe_task}_{clf_name}_exper_{str(exper_n)}.json")
+    else:
+        result_fname_path = os.path.join(result_dir_path, f"{probe_task}_{clf_name}.json")
     with open(result_fname_path, "w+", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False, indent=4)
 
@@ -103,21 +113,24 @@ class FeatureDataset(Dataset):
 
 
 class ProbingDataset(Dataset):
-    def __init__(self, probe_task: str, prepro_batch_size: int, bucketing: bool):
+    def __init__(self, probe_task: str, prepro_batch_size: int, bucketing: bool, fraction: Optional[Union[float, int]]):
         """
         Dataset object for creating features for the probe task
         :param probe_task: The probe task name
         :param prepro_batch_size: The size of the batch for preprocessing
         :param bucketing: Whether to perform char-level sequence bucketing
+        :param fraction: Size of fraction of the original dataset
         """
         super(ProbingDataset, self).__init__()
         self.probe_task = probe_task
         self.prepro_batch_size = prepro_batch_size
         self.bucketing = bucketing
+        self.fraction = fraction
         self.examples = self.load_dataset(
             probe_task=self.probe_task,
             prepro_batch_size=self.prepro_batch_size,
             bucketing=self.bucketing,
+            fraction=self.fraction
         )
 
     def __len__(self):
@@ -128,7 +141,8 @@ class ProbingDataset(Dataset):
 
     @staticmethod
     def load_dataset(
-        probe_task: str, prepro_batch_size: int, bucketing: bool, data_dir: str = "data"
+            probe_task: str, prepro_batch_size: int, bucketing: bool,
+            fraction: Optional[Union[float, int]], data_dir: str = "data",
     ) -> list:
         examples = []
         ind = 0
@@ -139,7 +153,11 @@ class ProbingDataset(Dataset):
         ) as f:
             for line in f:
                 subset, label, sentence = line.strip().split("\t")
-                examples.append((ind, subset, label, sentence, len(sentence.split())))
+                if fraction:
+                    if fraction and (random.random() < fraction):
+                        examples.append((ind, subset, label, sentence, len(sentence.split())))
+                else:
+                    examples.append((ind, subset, label, sentence, len(sentence.split())))
                 ind += 1
 
         if bucketing:
@@ -277,6 +295,7 @@ class Featurizer(object):
             probe_task=self.probe_task,
             prepro_batch_size=self.args.prepro_batch_size,
             bucketing=self.args.bucketing,
+            fraction=self.args.fraction
         )
         self.transformer_model = TransformerModel(
             model_name=self.model_name, model_is_random=self.args.model_is_random
