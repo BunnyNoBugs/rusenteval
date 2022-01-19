@@ -59,7 +59,7 @@ def save_results(
     :param exper_n: The number of the experiment in a series
     """
     if fraction:
-        result_dir_path = os.path.join(os.getcwd(), save_dir, model_name, str(fraction))
+        result_dir_path = os.path.join(os.getcwd(), save_dir, model_name, probe_task, str(fraction))
     else:
         result_dir_path = os.path.join(os.getcwd(), save_dir, model_name)
     if not os.path.exists(result_dir_path):
@@ -144,6 +144,8 @@ class ProbingDataset(Dataset):
             probe_task: str, prepro_batch_size: int, bucketing: bool,
             fraction: Optional[Union[float, int]], data_dir: str = "data",
     ) -> list:
+        if fraction:
+            random.seed()
         examples = []
         ind = 0
         with open(
